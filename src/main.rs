@@ -1,4 +1,5 @@
 use clap::Parser;
+use ogimage::generate_images;
 use std::path::{Path, PathBuf};
 use std::fs;
 use tokio::fs as tokio_fs;
@@ -6,6 +7,8 @@ use quick_xml::events::{BytesDecl, BytesEnd, BytesStart, BytesText, Event};
 use quick_xml::Writer;
 use std::io::Cursor;
 use async_recursion::async_recursion;
+
+pub mod ogimage;
 
 #[derive(Parser)]
 struct Cli {
@@ -27,7 +30,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tokio_fs::write("sitemap.xml", sitemap).await?;
 
     println!("Sitemap generated: sitemap.xml");
-
+    generate_images(&args.dir, &urls).await?;
+    println!("Generated og images");
     Ok(())
 }
 

@@ -10,3 +10,7 @@ quick-xml = "0.36.2"
 chrono = "0.4"
 futures = "0.3"
 async-recursion = "1.0"
+chromiumoxide = { git = "https://github.com/mattsse/chromiumoxide", features = [
+    "tokio-runtime",
+    "_fetcher-native-tokio",
+], default-features = false, branch = "main" }
