@@ -1,0 +1,12 @@
+[package]
+name = "leptos_sitemap"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tokio = { version = "1.28", features = ["full"] }
+clap = { version = "4.3", features = ["derive"] }
+quick-xml = "0.36.2"
+chrono = "0.4"
+futures = "0.3"
+async-recursion = "1.0"
