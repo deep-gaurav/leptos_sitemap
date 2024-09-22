@@ -15,6 +15,9 @@ struct Cli {
     /// The root directory to start the search
     #[arg(short, long)]
     dir: PathBuf,
+
+    #[arg( long)]
+    host: String,
 }
 
 #[tokio::main]
@@ -26,8 +29,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     find_index_html(&args.dir, &args.dir, &mut urls).await?;
 
     // Generate the sitemap.xml content
-    let sitemap = generate_sitemap(&urls)?;
-    tokio_fs::write("sitemap.xml", sitemap).await?;
+    let sitemap = generate_sitemap(&args.host, &urls)?;
+    tokio_fs::write(&args.dir.join("sitemap.xml"), sitemap).await?;
 
     println!("Sitemap generated: sitemap.xml");
     generate_images(&args.dir, &urls).await?;
@@ -50,6 +53,7 @@ async fn find_index_html(base_dir: &Path, dir: &Path, urls: &mut Vec<String>) ->
             let path = path.strip_prefix(base_dir);
             if let Ok(path) = path {
                 if let Some(path_str) = path.to_str() {
+                    let path_str = path_str.replace(r"\", "/");
                     if let Some(path) = path_str.strip_suffix("index.html"){
                         urls.push(path.to_string());
                     }else{
@@ -63,7 +67,7 @@ async fn find_index_html(base_dir: &Path, dir: &Path, urls: &mut Vec<String>) ->
     Ok(())
 }
 
-fn generate_sitemap(urls: &[String]) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+fn generate_sitemap(host:&str, urls: &[String]) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
     let mut writer = Writer::new(Cursor::new(Vec::new()));
 
     // Write the XML declaration
@@ -81,7 +85,7 @@ fn generate_sitemap(urls: &[String]) -> Result<Vec<u8>, Box<dyn std::error::Erro
 
         let mut loc_tag = BytesStart::new("loc");
         writer.write_event(Event::Start(loc_tag))?;
-        writer.write_event(Event::Text(BytesText::new(url.as_str())))?;
+        writer.write_event(Event::Text(BytesText::new(&format!("{host}{url}",))))?;
         writer.write_event(Event::End(BytesEnd::new("loc")))?;
 
         writer.write_event(Event::End(BytesEnd::new("url")))?;

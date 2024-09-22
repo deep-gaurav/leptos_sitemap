@@ -1,7 +1,9 @@
 use std::path::Path;
 
-use chromiumoxide::{Browser, BrowserConfig};
+use axum::{routing::get_service, Router};
+use chromiumoxide::{handler::viewport::Viewport, Browser, BrowserConfig};
 use futures::StreamExt;
+use tower_http::services::ServeDir;
 
 pub async fn generate_images(
     base_dir: &Path,
@@ -10,7 +12,11 @@ pub async fn generate_images(
     // create a `Browser` that spawns a `chromium` process running with UI (`with_head()`, headless is default)
     // and the handler that drives the websocket etc.
     let (mut browser, mut handler) =
-        Browser::launch(BrowserConfig::builder().with_head().build()?).await?;
+        Browser::launch(BrowserConfig::builder().viewport(Some(Viewport{
+            width: 1200,
+            height: 800,
+            ..Default::default()
+        })).build()?).await?;
 
     // spawn a new task that continuously polls the handler
     let handle = tokio::task::spawn(async move {
@@ -21,8 +27,34 @@ pub async fn generate_images(
         }
     });
 
-    // create a new browser page and navigate to the url
-    let page = browser.new_page("https://en.wikipedia.org").await?;
+    let static_service = get_service(ServeDir::new(base_dir));
 
+    let app = Router::new().nest_service("/", static_service);
+
+    let jc =  tokio::spawn(async move {
+        let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
+        axum::serve(listener, app).await
+    });
+
+    
+    
+    // create a new browser page and navigate to the url
+    for url in urls.iter() {
+        println!("check for url {url}");
+        let page = browser.new_page(format!("http://127.0.0.1:3000/{}",url)).await?;
+
+        let og_div = page.find_element("#og-image").await;
+        let og_img = page.find_element(r#"meta[property="og:image"]"#).await;
+        if let (Ok(og_div), Ok(og_img)) = (og_div, og_img) {
+            let image_name = og_img.attribute("content").await;
+            if let Ok(Some(img_name)) = image_name{
+                let path = base_dir.join(url).join(img_name);
+                og_div.save_screenshot(chromiumoxide::cdp::browser_protocol::page::CaptureScreenshotFormat::Jpeg, path).await;
+                println!("OG Image Generated");
+            }
+        }
+    }
+
+    jc.abort();
     Ok(())
 }

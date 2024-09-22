@@ -14,3 +14,6 @@ chromiumoxide = { git = "https://github.com/mattsse/chromiumoxide", features = [
     "tokio-runtime",
     "_fetcher-native-tokio",
 ], default-features = false, branch = "main" }
+
+axum = "0.7.6"
+tower-http = { version = "0.6.0", features = ["fs"]}
