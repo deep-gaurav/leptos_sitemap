@@ -48,9 +48,12 @@ pub async fn generate_images(
         if let (Ok(og_div), Ok(og_img)) = (og_div, og_img) {
             let image_name = og_img.attribute("content").await;
             if let Ok(Some(img_name)) = image_name{
-                let path = base_dir.join(url).join(img_name);
-                og_div.save_screenshot(chromiumoxide::cdp::browser_protocol::page::CaptureScreenshotFormat::Jpeg, path).await;
-                println!("OG Image Generated");
+                let img_name = img_name.strip_prefix("/").unwrap_or(&img_name);
+                let img_name = img_name.replace("/", std::path::MAIN_SEPARATOR_STR);
+                println!("img_name {img_name}");
+                let path = base_dir.join(Path::new(&img_name));
+                og_div.save_screenshot(chromiumoxide::cdp::browser_protocol::page::CaptureScreenshotFormat::Jpeg, &path).await;
+                println!("OG Image Generated {path:?}");
             }
         }
     }
