@@ -8,6 +8,7 @@ use tower_http::services::ServeDir;
 pub async fn generate_images(
     base_dir: &Path,
     urls: &[String],
+    host: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
     // create a `Browser` that spawns a `chromium` process running with UI (`with_head()`, headless is default)
     // and the handler that drives the websocket etc.
@@ -48,7 +49,7 @@ pub async fn generate_images(
         if let (Ok(og_div), Ok(og_img)) = (og_div, og_img) {
             let image_name = og_img.attribute("content").await;
             if let Ok(Some(img_name)) = image_name{
-                let img_name = img_name.strip_prefix("/").unwrap_or(&img_name);
+                let img_name = img_name.strip_prefix(host).unwrap_or(&img_name);
                 let img_name = img_name.replace("/", std::path::MAIN_SEPARATOR_STR);
                 println!("img_name {img_name}");
                 let path = base_dir.join(Path::new(&img_name));

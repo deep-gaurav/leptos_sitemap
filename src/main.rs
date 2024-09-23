@@ -33,7 +33,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tokio_fs::write(&args.dir.join("sitemap.xml"), sitemap).await?;
 
     println!("Sitemap generated: sitemap.xml");
-    generate_images(&args.dir, &urls).await?;
+    generate_images(&args.dir, &urls, &args.host).await?;
     println!("Generated og images");
     Ok(())
 }
