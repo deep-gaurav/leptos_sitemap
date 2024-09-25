@@ -41,15 +41,17 @@ pub async fn generate_images(
         while let Some(h) = handler.next().await {
             if let Err(err) = h {
                 eprintln!("Handler stopped {err:?}");
-                break;
+                // break;
             }
         }
+        eprintln!("Handler ended")
     });
     
     // create a new browser page and navigate to the url
     for url in urls.iter() {
-        println!("check for url {url}");
-        let page = browser.new_page(format!("http://127.0.0.1:{port}/{}",url)).await?;
+        let browserurl = format!("http://127.0.0.1:{port}/{}",url);
+        println!("check for url {browserurl}");
+        let page = browser.new_page(browserurl).await?;
 
         let og_div = page.find_element("#og-image").await;
         let og_img = page.find_element(r#"meta[property="og:image"]"#).await;
