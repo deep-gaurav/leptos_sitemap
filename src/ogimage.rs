@@ -10,23 +10,8 @@ pub async fn generate_images(
     urls: &[String],
     host: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    // create a `Browser` that spawns a `chromium` process running with UI (`with_head()`, headless is default)
-    // and the handler that drives the websocket etc.
-    let (mut browser, mut handler) =
-        Browser::launch(BrowserConfig::builder().viewport(Some(Viewport{
-            width: 1200,
-            height: 800,
-            ..Default::default()
-        })).build()?).await?;
 
-    // spawn a new task that continuously polls the handler
-    let handle = tokio::task::spawn(async move {
-        while let Some(h) = handler.next().await {
-            if h.is_err() {
-                break;
-            }
-        }
-    });
+
 
     let static_service = get_service(ServeDir::new(base_dir));
 
@@ -39,8 +24,26 @@ pub async fn generate_images(
         axum::serve(listener, app).await
     });
 
-    
+
+    // Wait for server to start
     tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+
+        // create a `Browser` that spawns a `chromium` process running with UI (`with_head()`, headless is default)
+    // and the handler that drives the websocket etc.
+    let (mut browser, mut handler) =
+        Browser::launch(BrowserConfig::builder().viewport(Some(Viewport{
+            width: 1200,
+            height: 800,
+            ..Default::default()
+        })).build()?).await?;
+    // spawn a new task that continuously polls the handler
+    let handle = tokio::task::spawn(async move {
+        while let Some(h) = handler.next().await {
+            if h.is_err() {
+                break;
+            }
+        }
+    });
     
     // create a new browser page and navigate to the url
     for url in urls.iter() {
