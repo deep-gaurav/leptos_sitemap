@@ -39,7 +39,8 @@ pub async fn generate_images(
     // spawn a new task that continuously polls the handler
     let handle = tokio::task::spawn(async move {
         while let Some(h) = handler.next().await {
-            if h.is_err() {
+            if let Err(err) = h {
+                eprintln!("Handler stopped {err:?}");
                 break;
             }
         }
@@ -66,5 +67,6 @@ pub async fn generate_images(
     }
 
     jc.abort();
+    handle.abort();
     Ok(())
 }
