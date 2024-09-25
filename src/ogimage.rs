@@ -32,17 +32,20 @@ pub async fn generate_images(
 
     let app = Router::new().nest_service("/", static_service);
 
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+
+    let port = listener.local_addr()?.port();
     let jc =  tokio::spawn(async move {
-        let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
         axum::serve(listener, app).await
     });
 
     
+    tokio::time::sleep(std::time::Duration::from_secs(5)).await;
     
     // create a new browser page and navigate to the url
     for url in urls.iter() {
         println!("check for url {url}");
-        let page = browser.new_page(format!("http://127.0.0.1:3000/{}",url)).await?;
+        let page = browser.new_page(format!("http://127.0.0.1:{port}/{}",url)).await?;
 
         let og_div = page.find_element("#og-image").await;
         let og_img = page.find_element(r#"meta[property="og:image"]"#).await;
